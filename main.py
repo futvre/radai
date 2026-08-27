@@ -78,7 +78,7 @@ def monitor_station(station_name, stream_url, chunk_duration=12):
     print(f"[{station_name}] Εκκίνηση παρακολούθησης...")
     while True:
         try:
-            response = requests.get(stream_url, stream=True, timeout=10)
+            response = requests.get(stream_url, stream=True, timeout=10, verify=False)
             audio_bytes = b""
             start_time = time.time()
             for chunk in response.iter_content(chunk_size=4096):
