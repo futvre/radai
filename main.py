@@ -26,9 +26,7 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 STATIONS = {
-    "Red FM": "https://stream.radiojar.com/redfm1026",
-    "Rythmos FM": "https://stream.radiojar.com/rythmos949",
-    "En Lefko": "https://stream.radiojar.com/enlefko877"
+    "Plus 102.5": "https://eco.onestreaming.com:18814/stream"
 }
 
 # Αρχικοποίηση πελατών API
