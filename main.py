@@ -101,7 +101,7 @@ def verify_contest(text, station_name):
     """
     try:
         response = gemini_client.models.generate_content(
-            model='gemini-2.0-flash',
+            model='gemini-3.6-flash',
             contents=prompt,
             config={'response_mime_type': 'application/json'}
         )
