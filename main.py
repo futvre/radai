@@ -34,7 +34,7 @@ STATIONS = {
 # Αρχικοποίηση πελατών API
 groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 if GEMINI_API_KEY:
-    genai.configure(api_key=GEMINI_API_KEY)
+    client = genai.Client(api_key=GEMINI_API_KEY)
     gemini_model = genai.GenerativeModel("gemini-1.5-flash")
 else:
     gemini_model = None
