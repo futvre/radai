@@ -28,7 +28,8 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 STATIONS = {
-    "Plus 102.6": "https://eco.onestreaming.com/proxy/plusradio/stream"
+    "Plus 102.6": "https://eco.onestreaming.com/proxy/plusradio/stream",
+    "Cosmoradio 95.1": "https://eco.onestreaming.com/proxy/cosmoradio/stream"
 }
 
 # Αρχικοποίηση πελατών API
