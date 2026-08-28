@@ -3,7 +3,7 @@ import json
 import threading
 import time
 import requests
-import google.generativeai as genai
+from google import genai
 from groq import Groq
 from flask import Flask
 import urllib3
