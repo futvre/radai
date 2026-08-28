@@ -6,6 +6,8 @@ import requests
 import google.generativeai as genai
 from groq import Groq
 from flask import Flask
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- FLASK SERVER (Για να κρατάει το Render το Web Service ενεργό) ---
 app = Flask(__name__)
