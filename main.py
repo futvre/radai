@@ -85,31 +85,38 @@ def transcribe_audio(file_path):
     return text
 
 def verify_contest(text, station_name):
-    if not gemini_client:
+    if not groq_client:
         return {"is_active_contest": False}
         
     prompt = f"""
     Εξέτασε αν το παρακάτω κείμενο από τον ραδιοφωνικό σταθμό '{station_name}' ανακοινώνει έναν ενεργό διαγωνισμό αυτή τη στιγμή.
     Κείμενο: "{text}"
-    Επίστρεψε ΑΠΟΚΛΕΙΣΤΙΚΑ JSON:
+
+    Απάντησε ΑΠΟΚΛΕΙΣΤΙΚΑ σε έγκυρη μορφή JSON (χωρίς επιπλέον κείμενο ή markdown):
     {{
-        "is_active_contest": boolean,
-        "action_type": "SMS" | "VIBER" | "PHONE" | "FORM" | "UNKNOWN",
-        "instructions": "string",
-        "confidence": float
+        "is_active_contest": true,
+        "action_type": "SMS",
+        "instructions": "σύντομες οδηγίες",
+        "confidence": 0.9
     }}
     """
     try:
-        response = gemini_client.models.generate_content(
-            model='gemini-3.6-flash',
-            contents=prompt,
-            config={'response_mime_type': 'application/json'}
+        response = groq_client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[{"role": "user", "content": prompt}],
+            response_format={"type": "json_object"}
         )
-        return json.loads(response.text)
+        return json.loads(response.choices[0].message.content)
     except Exception as e:
-        print(f"Σφάλμα Gemini Verification: {e}")
-        return {"is_active_contest": False}
-
+        print(f"Σφάλμα Groq Verification: {e}")
+        # Αν αποτύχει η ανάλυση, στέλνει ειδοποίηση βασισμένη μόνο στις λέξεις-κλειδιά
+        return {
+            "is_active_contest": True,
+            "action_type": "UNKNOWN",
+            "instructions": "Εντοπίστηκε λέξη-κλειδί διαγωνισμού",
+            "confidence": 0.8
+        }
+        
 def monitor_station(station_name, stream_url, chunk_duration=35):
     print(f"[{station_name}] Εκκίνηση παρακολούθησης...")
     while True:
