@@ -10,7 +10,7 @@ import urllib3
 
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
-# --- FLASK SERVER (Για να κρατάει το Render το Web Service ενεργό) ---
+# --- FLASK SERVER ---
 app = Flask(__name__)
 
 @app.route('/')
@@ -21,7 +21,7 @@ def run_flask():
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
-# --- ΡΥΘΜΙΣΕΙΣ API KEYS ---
+# --- API KEYS ---
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -32,7 +32,6 @@ STATIONS = {
     "Cosmoradio 95.1": "https://eco.onestreaming.com/proxy/cosmoradio/stream"
 }
 
-# Αρχικοποίηση πελατών API
 groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
 gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
@@ -48,6 +47,42 @@ def send_telegram_alert(message):
         requests.post(url, json=payload, timeout=5)
     except Exception as e:
         print(f"Σφάλμα Telegram: {e}")
+
+def transcribe_audio(file_path):
+    """ Δοκιμή με Groq (Whisper) και αν αποτύχει, Fallback σε Gemini 2.0 Flash """
+    text = ""
+    
+    # 1. Δοκιμή με Groq
+    if groq_client:
+        try:
+            with open(file_path, "rb") as file:
+                transcription = groq_client.audio.transcriptions.create(
+                    file=(os.path.basename(file_path), file.read()),
+                    model="whisper-large-v3",
+                    response_format="text",
+                    language="el"
+                )
+                text = transcription.strip()
+                if text:
+                    return text
+        except Exception as e:
+            print(f"Groq Error/Limit, αλλαγή σε Gemini: {e}")
+
+    # 2. Fallback σε Gemini αν το Groq αποτύχει ή πιάσει όριο
+    if gemini_client:
+        try:
+            uploaded_file = gemini_client.files.upload(file=file_path)
+            response = gemini_client.models.generate_content(
+                model='gemini-2.0-flash',
+                contents=['Απομαγνητοφώνησε ακριβώς τον ελληνικό ήχο:', uploaded_file]
+            )
+            text = response.text.strip() if response.text else ""
+            # Καθαρισμός αρχείου από το Gemini Cloud
+            gemini_client.files.delete(name=uploaded_file.name)
+        except Exception as e:
+            print(f"Gemini Transcription Error: {e}")
+
+    return text
 
 def verify_contest(text, station_name):
     if not gemini_client:
@@ -72,37 +107,29 @@ def verify_contest(text, station_name):
         )
         return json.loads(response.text)
     except Exception as e:
-        print(f"Σφάλμα Gemini: {e}")
+        print(f"Σφάλμα Gemini Verification: {e}")
         return {"is_active_contest": False}
 
-def monitor_station(station_name, stream_url, chunk_duration=12):
+def monitor_station(station_name, stream_url, chunk_duration=35):
     print(f"[{station_name}] Εκκίνηση παρακολούθησης...")
     while True:
+        temp_filename = f"temp_{station_name.replace(' ', '_')}.mp3"
         try:
             headers = {'User-Agent': 'Mozilla/5.0'}
             response = requests.get(stream_url, stream=True, timeout=10, headers=headers, verify=False)
             audio_bytes = b""
             start_time = time.time()
+            
             for chunk in response.iter_content(chunk_size=4096):
                 audio_bytes += chunk
                 if time.time() - start_time >= chunk_duration:
                     break
             
-            temp_filename = f"temp_{station_name.replace(' ', '_')}.mp3"
             with open(temp_filename, "wb") as f:
                 f.write(audio_bytes)
 
-            if groq_client:
-                with open(temp_filename, "rb") as file:
-                    transcription = groq_client.audio.transcriptions.create(
-                        file=(temp_filename, file.read()),
-                        model="whisper-large-v3",
-                        response_format="text",
-                        language="el"
-                    )
-                text = transcription.strip()
-            else:
-                text = ""
+            # Απομαγνητοφώνηση με Groq / Gemini Fallback
+            text = transcribe_audio(temp_filename)
 
             if text:
                 text_lower = text.lower()
@@ -122,9 +149,13 @@ def monitor_station(station_name, stream_url, chunk_duration=12):
         except Exception as e:
             print(f"[{station_name}] Σφάλμα: {e}")
             time.sleep(5)
+        finally:
+            # Διαγραφή του τοπικού mp3 για να μην γεμίζει ο δίσκος
+            if os.path.exists(temp_filename):
+                os.remove(temp_filename)
 
 if __name__ == "__main__":
-    send_telegram_alert("🤖 Το Radio Bot ξεκίνησε και παρακολουθεί κανονικά!")
+    #send_telegram_alert("🤖 Το Radio Bot ξεκίνησε και παρακολουθεί κανονικά!")
 
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.daemon = True
