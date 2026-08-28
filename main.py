@@ -26,8 +26,10 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 STATIONS = {
-    "Plus 102.5": "https://eco.onestreaming.com:8039/"
+    "Plus 102.6": "https://stream.radiojar.com/plus1025",
+    "Cosmoradio 95.1": "https://stream.cosmoradio.gr/stream"
 }
+
 
 # Αρχικοποίηση πελατών API
 groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
