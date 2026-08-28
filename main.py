@@ -26,8 +26,7 @@ TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
 STATIONS = {
-    "Plus 102.6": "https://stream.radiojar.com/plus1025",
-    "Cosmoradio 95.1": "https://cosmoradio.live24.gr/cosmoradio951"
+    "Plus 102.6": "https://s10.voscast.com:8038/stream",
 }
 
 # Αρχικοποίηση πελατών API
