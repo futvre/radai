@@ -7,6 +7,7 @@ from google import genai
 from groq import Groq
 from flask import Flask
 import urllib3
+
 urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 
 # --- FLASK SERVER (Για να κρατάει το Render το Web Service ενεργό) ---
@@ -17,11 +18,10 @@ def home():
     return "Radio Contest Bot is Running 24/7!"
 
 def run_flask():
-    # Το Render ορίζει αυτόματα τη θύρα μέσω της μεταβλητής περιβάλλοντος PORT
     port = int(os.environ.get("PORT", 10000))
     app.run(host='0.0.0.0', port=port)
 
-# --- ΡΥΘΜΙΣΕΙΣ API KEYS (Διαβάζονται από τα Environment Variables) ---
+# --- ΡΥΘΜΙΣΕΙΣ API KEYS ---
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
@@ -33,11 +33,7 @@ STATIONS = {
 
 # Αρχικοποίηση πελατών API
 groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
-if GEMINI_API_KEY:
-    client = genai.Client(api_key=GEMINI_API_KEY)
-    gemini_model = genai.GenerativeModel("gemini-1.5-flash")
-else:
-    gemini_model = None
+gemini_client = genai.Client(api_key=GEMINI_API_KEY) if GEMINI_API_KEY else None
 
 KEYWORDS = ["διαγωνισμ", "δώρο", "κέρδισε", "κερδίστε", "στείλτε", "sms", "viber", "πρόσκληση"]
 
@@ -53,8 +49,9 @@ def send_telegram_alert(message):
         print(f"Σφάλμα Telegram: {e}")
 
 def verify_contest(text, station_name):
-    if not gemini_model:
+    if not gemini_client:
         return {"is_active_contest": False}
+        
     prompt = f"""
     Εξέτασε αν το παρακάτω κείμενο από τον ραδιοφωνικό σταθμό '{station_name}' ανακοινώνει έναν ενεργό διαγωνισμό αυτή τη στιγμή.
     Κείμενο: "{text}"
@@ -67,9 +64,10 @@ def verify_contest(text, station_name):
     }}
     """
     try:
-        response = gemini_model.generate_content(
-            prompt,
-            generation_config={"response_mime_type": "application/json"}
+        response = gemini_client.models.generate_content(
+            model='gemini-2.5-flash',
+            contents=prompt,
+            config={'response_mime_type': 'application/json'}
         )
         return json.loads(response.text)
     except Exception as e:
@@ -125,17 +123,14 @@ def monitor_station(station_name, stream_url, chunk_duration=12):
             time.sleep(5)
 
 if __name__ == "__main__":
-    # 1. Εκκίνηση του Flask Web Server σε background thread
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.daemon = True
     flask_thread.start()
 
-    # 2. Εκκίνηση της παρακολούθησης των ραδιοφώνων
     for name, url in STATIONS.items():
         t = threading.Thread(target=monitor_station, args=(name, url))
         t.daemon = True
         t.start()
 
-    # Διατήρηση της κύριας διεργασίας
     while True:
         time.sleep(1)
