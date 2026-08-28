@@ -23,13 +23,12 @@ def run_flask():
 GROQ_API_KEY = os.environ.get("GROQ_API_KEY")
 GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
-TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
+TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID"
 
 STATIONS = {
     "Plus 102.6": "https://stream.radiojar.com/plus1025",
-    "Cosmoradio 95.1": "https://stream.cosmoradio.gr/stream"
+    "Cosmoradio 95.1": "https://cosmoradio.live24.gr/cosmoradio951"
 }
-
 
 # Αρχικοποίηση πελατών API
 groq_client = Groq(api_key=GROQ_API_KEY) if GROQ_API_KEY else None
@@ -80,7 +79,8 @@ def monitor_station(station_name, stream_url, chunk_duration=12):
     print(f"[{station_name}] Εκκίνηση παρακολούθησης...")
     while True:
         try:
-            response = requests.get(stream_url, stream=True, timeout=10, verify=False)
+            headers = {'User-Agent': 'Mozilla/5.0'}
+            response = requests.get(stream_url, stream=True, timeout=10, headers=headers, verify=False)
             audio_bytes = b""
             start_time = time.time()
             for chunk in response.iter_content(chunk_size=4096):
