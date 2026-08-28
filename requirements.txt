@@ -1,4 +1,4 @@
 requests
 groq
-google-generativeai
+google-genai
 flask
