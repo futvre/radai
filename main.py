@@ -27,8 +27,6 @@ GEMINI_API_KEY = os.environ.get("GEMINI_API_KEY")
 TELEGRAM_BOT_TOKEN = os.environ.get("TELEGRAM_BOT_TOKEN")
 TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 
-send_telegram_alert("🤖 Το Radio Bot ξεκίνησε και παρακολουθεί κανονικά!")
-
 STATIONS = {
     "Plus 102.6": "https://eco.onestreaming.com/proxy/plusradio/stream"
 }
@@ -125,6 +123,8 @@ def monitor_station(station_name, stream_url, chunk_duration=12):
             time.sleep(5)
 
 if __name__ == "__main__":
+    send_telegram_alert("🤖 Το Radio Bot ξεκίνησε και παρακολουθεί κανονικά!")
+
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.daemon = True
     flask_thread.start()
