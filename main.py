@@ -49,10 +49,8 @@ def send_telegram_alert(message):
         print(f"Σφάλμα Telegram: {e}")
 
 def transcribe_audio(file_path):
-    """ Δοκιμή με Groq (Whisper) και αν αποτύχει, Fallback σε Gemini 2.0 Flash """
     text = ""
-    
-    # 1. Δοκιμή με Groq
+    # 1. Δοκιμή με Groq Whisper
     if groq_client:
         try:
             with open(file_path, "rb") as file:
@@ -68,54 +66,48 @@ def transcribe_audio(file_path):
         except Exception as e:
             print(f"Groq Error/Limit, αλλαγή σε Gemini: {e}")
 
-    # 2. Fallback σε Gemini αν το Groq αποτύχει ή πιάσει όριο
+    # 2. Fallback σε Gemini 3.6 Flash αν εξαντληθεί το Groq (429)
     if gemini_client:
         try:
             uploaded_file = gemini_client.files.upload(file=file_path)
             response = gemini_client.models.generate_content(
-                model='gemini-2.0-flash',
+                model='gemini-3.6-flash',  # <-- ΕΝΗΜΕΡΩΜΕΝΟ ΜΟΝΤΕΛΟ
                 contents=['Απομαγνητοφώνησε ακριβώς τον ελληνικό ήχο:', uploaded_file]
             )
             text = response.text.strip() if response.text else ""
-            # Καθαρισμός αρχείου από το Gemini Cloud
             gemini_client.files.delete(name=uploaded_file.name)
         except Exception as e:
             print(f"Gemini Transcription Error: {e}")
 
     return text
 
+
 def verify_contest(text, station_name):
-    if not groq_client:
+    if not gemini_client:
         return {"is_active_contest": False}
         
     prompt = f"""
     Εξέτασε αν το παρακάτω κείμενο από τον ραδιοφωνικό σταθμό '{station_name}' ανακοινώνει έναν ενεργό διαγωνισμό αυτή τη στιγμή.
     Κείμενο: "{text}"
-
-    Απάντησε ΑΠΟΚΛΕΙΣΤΙΚΑ σε έγκυρη μορφή JSON (χωρίς επιπλέον κείμενο ή markdown):
+    Επίστρεψε ΑΠΟΚΛΕΙΣΤΙΚΑ JSON:
     {{
-        "is_active_contest": true,
-        "action_type": "SMS",
-        "instructions": "σύντομες οδηγίες",
-        "confidence": 0.9
+        "is_active_contest": boolean,
+        "action_type": "SMS" | "VIBER" | "PHONE" | "FORM" | "UNKNOWN",
+        "instructions": "string",
+        "confidence": float
     }}
     """
     try:
-        response = groq_client.chat.completions.create(
-            model="llama-3.1-8b-instant",
-            messages=[{"role": "user", "content": prompt}],
-            response_format={"type": "json_object"}
+        response = gemini_client.models.generate_content(
+            model='gemini-3.6-flash',  # <-- ΕΝΗΜΕΡΩΜΕΝΟ ΜΟΝΤΕΛΟ
+            contents=prompt,
+            config={'response_mime_type': 'application/json'}
         )
-        return json.loads(response.choices[0].message.content)
+        return json.loads(response.text)
     except Exception as e:
-        print(f"Σφάλμα Groq Verification: {e}")
-        # Αν αποτύχει η ανάλυση, στέλνει ειδοποίηση βασισμένη μόνο στις λέξεις-κλειδιά
-        return {
-            "is_active_contest": True,
-            "action_type": "UNKNOWN",
-            "instructions": "Εντοπίστηκε λέξη-κλειδί διαγωνισμού",
-            "confidence": 0.8
-        }
+        print(f"Σφάλμα Gemini Verification: {e}")
+        return {"is_active_contest": True, "action_type": "UNKNOWN", "instructions": "Εντοπίστηκε λέξη-κλειδί"}
+
         
 def monitor_station(station_name, stream_url, chunk_duration=35):
     print(f"[{station_name}] Εκκίνηση παρακολούθησης...")
