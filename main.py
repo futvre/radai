@@ -131,7 +131,7 @@ def monitor_station(station_name, stream_url, chunk_duration=35):
             text = transcribe_audio(temp_filename)
 
             if text:
-                print(f"💓 [{timestamp}] [{station_name}] Ακούστηκε: \"{text[:70]}...\"")
+                print(f"💓 [{station_name}] Ακούστηκε: \"{text[:70]}...\"")
                 text_lower = text.lower()
                 found_keywords = [kw for kw in KEYWORDS if kw in text_lower]
                 
@@ -164,7 +164,7 @@ if __name__ == "__main__":
     time.sleep(2)
 
     # 2. Ειδοποίηση στο Telegram ότι το bot ξεκίνησε (Βγάλτο από τα σχόλια!)
-    send_telegram_alert("🤖 *Το Radio Bot ξεκίνησε και παρακολουθεί κανονικά!*")
+    #send_telegram_alert("🤖 *Το Radio Bot ξεκίνησε και παρακολουθεί κανονικά!*")
 
     # 3. Εκκίνηση παρακολούθησης για κάθε σταθμό
     for name, url in STATIONS.items():
