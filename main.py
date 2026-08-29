@@ -155,16 +155,24 @@ def monitor_station(station_name, stream_url, chunk_duration=35):
                 os.remove(temp_filename)
 
 if __name__ == "__main__":
-    #send_telegram_alert("🤖 Το Radio Bot ξεκίνησε και παρακολουθεί κανονικά!")
-
+    # 1. Εκκίνηση του Flask Web Server
     flask_thread = threading.Thread(target=run_flask)
     flask_thread.daemon = True
     flask_thread.start()
 
+    # Μικρή αναμονή 2 δευτερολέπτων για να σταθεροποιηθεί ο Flask server
+    time.sleep(2)
+
+    # 2. Ειδοποίηση στο Telegram ότι το bot ξεκίνησε (Βγάλτο από τα σχόλια!)
+    send_telegram_alert("🤖 *Το Radio Bot ξεκίνησε και παρακολουθεί κανονικά!*")
+
+    # 3. Εκκίνηση παρακολούθησης για κάθε σταθμό
     for name, url in STATIONS.items():
         t = threading.Thread(target=monitor_station, args=(name, url))
         t.daemon = True
         t.start()
 
+    # 4. Κρατάει το πρόγραμμα ζωντανό
     while True:
         time.sleep(1)
+
