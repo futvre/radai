@@ -131,6 +131,7 @@ def monitor_station(station_name, stream_url, chunk_duration=35):
             text = transcribe_audio(temp_filename)
 
             if text:
+                print(f"💓 [{timestamp}] [{station_name}] Ακούστηκε: \"{text[:70]}...\"")
                 text_lower = text.lower()
                 found_keywords = [kw for kw in KEYWORDS if kw in text_lower]
                 
