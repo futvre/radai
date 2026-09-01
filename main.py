@@ -1,4 +1,5 @@
 import os
+import re
 import threading
 import time
 import requests
@@ -32,7 +33,7 @@ STATIONS = {
     "Cosmoradio 95.1": "https://eco.onestreaming.com/proxy/cosmoradio/stream"
 }
 
-KEYWORDS = ["διαγωνισμ", "δωρ", "κερδ", "στειλ", "sms", "viber", "κληρωσ", "προσκλησ", "τηλεφων"]
+KEYWORDS = ["διαγωνισμ", "δωρ", "κερδ", "στειλ", "sms", "viber", "κληρωσ", "προσκλησ", "τηλεφων", "μηνυμ", "παρτ", "καλεσ"]
 
 key_index = 0
 key_lock = threading.Lock()
@@ -56,26 +57,30 @@ def send_telegram_alert(message):
     except Exception as e:
         print(f"Σφάλμα Telegram: {e}")
 
-def verify_contest_local(text):
-    """ 100% Δωρεάν & Ακαριαίος Τοπικός Έλεγχος """
-    text_lower = text.lower()
-    action_type = "UNKNOWN"
+def highlight_keywords(text, keywords):
+    """ Υπογραμμίζει (με bold) ολόκληρες τις λέξεις που περιέχουν τα keywords """
+    words = text.split()
+    highlighted_words = []
     
-    if "sms" in text_lower:
-        action_type = "SMS"
-    elif "viber" in text_lower:
-        action_type = "VIBER"
-    elif "τηλεφων" in text_lower or "παρτ" in text_lower or "καλεσ" in text_lower:
-        action_type = "PHONE"
-
-    return {
-        "is_active_contest": True,
-        "action_type": action_type
-    }
+    for word in words:
+        clean_word = word.lower()
+        matched = False
+        for kw in keywords:
+            if kw in clean_word:
+                matched = True
+                break
+        if matched:
+            highlighted_words.append(f"*{word}*")
+        else:
+            highlighted_words.append(word)
+            
+    return " ".join(highlighted_words)
 
 def transcribe_audio_with_retry(file_path):
     if not GROQ_KEYS:
         return ""
+
+    whisper_prompt = "Ραδιοφωνικός διαγωνισμός, δώρα, SMS, Viber, τηλέφωνο, κλήρωση, Plus Radio, Cosmoradio, στείλτε μήνυμα."
 
     for _ in range(len(GROQ_KEYS)):
         client = get_groq_client()
@@ -85,9 +90,13 @@ def transcribe_audio_with_retry(file_path):
                     file=(os.path.basename(file_path), file.read()),
                     model="whisper-large-v3",
                     response_format="text",
-                    language="el"
+                    language="el",
+                    prompt=whisper_prompt
                 )
-                return transcription.strip()
+                text = transcription.strip()
+                # Καθαρισμός των ψεύτικων υποτίτλων AUTHORWAVE
+                text = text.replace("Υπότιτλοι AUTHORWAVE", "").replace("AUTHORWAVE", "").strip()
+                return text
         except Exception as e:
             print(f"Groq Key Error: {e}. Δοκιμή με επόμενο Key...")
             continue
@@ -120,18 +129,18 @@ def monitor_station(station_name, stream_url, chunk_duration=30):
             if current_text:
                 print(f"💓 [{timestamp}] [{station_name}] Ακούστηκε: \"{current_text[:60]}...\"")
                 
-                # Ένωση με προηγούμενο chunk για να μην χάνονται πληροφορίες
                 full_context = f"{previous_text} {current_text}".strip()
                 found_keywords = [kw for kw in KEYWORDS if kw in current_text.lower()]
                 
                 if found_keywords:
-                    verification = verify_contest_local(full_context)
+                    # Υπογράμμιση (bolding) των keywords μέσα στο πλήρες κείμενο
+                    formatted_text = highlight_keywords(full_context, found_keywords)
+                    
                     alert_msg = (
                         f"🚨 *ΕΝΤΟΠΙΣΤΗΚΕ ΔΙΑΓΩΝΙΣΜΟΣ!* 🚨\n\n"
                         f"📻 *Σταθμός:* {station_name}\n"
-                        f"📲 *Τύπος:* {verification['action_type']}\n"
                         f"🔑 *Keywords:* {', '.join(found_keywords)}\n\n"
-                        f"💬 *Πλήρες Κείμενο (με προηγούμενο chunk):*\n_{full_context}_"
+                        f"💬 *Πλήρες Κείμενο:*\n_{formatted_text}_"
                     )
                     send_telegram_alert(alert_msg)
 
