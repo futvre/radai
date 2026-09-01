@@ -31,6 +31,7 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 STATIONS = {
     "Plus 102.6": "https://eco.onestreaming.com/proxy/plusradio/stream",
     "Cosmoradio 95.1": "https://eco.onestreaming.com/proxy/cosmoradio/stream"
+    "89 Rainbow": "https://stream.radiojar.com/083wqknmsuhvv"
 }
 
 KEYWORDS = ["διαγωνισμ", "δωρ", "κερδ", "στειλ", "sms", "viber", "κληρωσ", "προσκλησ", "τηλεφων", "μηνυμ", "παρτ", "καλεσ"]
