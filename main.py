@@ -31,10 +31,11 @@ TELEGRAM_CHAT_ID = os.environ.get("TELEGRAM_CHAT_ID")
 STATIONS = {
     "Plus 102.6": "https://eco.onestreaming.com/proxy/plusradio/stream",
     "Cosmoradio 95.1": "https://eco.onestreaming.com/proxy/cosmoradio/stream",
-    "89 Rainbow": "https://stream.radiojar.com/083wqknmsuhvv"
+    "89 Rainbow": "https://stream.radiojar.com/083wqknmsuhvv",
+    "City 106.1": "https://radio.lancom.gr:9012/stream5"
 }
 
-KEYWORDS = ["διαγωνισμ", "δωρ", "κερδ", "στειλ", "sms", "viber", "κληρωσ", "προσκλησ", "τηλεφων", "μηνυμ", "Ροκκος","Ροκος", "καλεσ"]
+KEYWORDS = ["διαγωνισμ", "δωρ", "κερδ", "στειλ", "sms", "viber", "κληρωσ", "προσκλησ", "μηνυμ", "Ροκκος","Ροκος", "καλεσ"]
 
 key_index = 0
 key_lock = threading.Lock()
@@ -81,7 +82,7 @@ def transcribe_audio_with_retry(file_path):
     if not GROQ_KEYS:
         return ""
 
-    whisper_prompt = "Ραδιοφωνικός διαγωνισμός, δώρα, SMS, Viber, τηλέφωνο, κλήρωση, Plus Radio, Cosmoradio, στείλτε μήνυμα."
+    whisper_prompt = "Ραδιοφωνικός διαγωνισμός, δώρα, SMS, Viber, κλήρωση, Plus Radio, Cosmoradio, στείλτε μήνυμα"
 
     for _ in range(len(GROQ_KEYS)):
         client = get_groq_client()
