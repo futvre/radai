@@ -34,7 +34,7 @@ STATIONS = {
     "89 Rainbow": "https://stream.radiojar.com/083wqknmsuhvv"
 }
 
-KEYWORDS = ["διαγωνισμ", "δωρ", "κερδ", "στειλ", "sms", "viber", "κληρωσ", "προσκλησ", "τηλεφων", "μηνυμ", "παρτ", "καλεσ"]
+KEYWORDS = ["διαγωνισμ", "δωρ", "κερδ", "στειλ", "sms", "viber", "κληρωσ", "προσκλησ", "τηλεφων", "μηνυμ", "Ροκκος","Ροκος", "καλεσ"]
 
 key_index = 0
 key_lock = threading.Lock()
@@ -71,7 +71,7 @@ def highlight_keywords(text, keywords):
                 matched = True
                 break
         if matched:
-            highlighted_words.append(f"*{word}*")
+            highlighted_words.append(f"🔔**{word}**🔔")
         else:
             highlighted_words.append(word)
             
@@ -81,7 +81,7 @@ def transcribe_audio_with_retry(file_path):
     if not GROQ_KEYS:
         return ""
 
-    whisper_prompt = "Ραδιοφωνικός διαγωνισμός, δώρα, SMS, Viber, τηλέφωνο, κλήρωση, Plus Radio, Cosmoradio, στείλτε μήνυμα."
+    whisper_prompt = "Ραδιοφωνικός διαγωνισμός, Ρόκκος, δώρα, SMS, Viber, τηλέφωνο, κλήρωση, Plus Radio, Cosmoradio, στείλτε μήνυμα."
 
     for _ in range(len(GROQ_KEYS)):
         client = get_groq_client()
